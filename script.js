@@ -1,3 +1,52 @@
+// --- PWA Installation Logic ---
+let deferredPrompt;
+const installButton = document.getElementById('installAppBtn');
+
+// 1. Service Worker Registration
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+            .then(registration => console.log('Service Worker registered successfully.'))
+            .catch(err => console.error('Service Worker registration failed:', err));
+    });
+}
+
+// 2. Listen for the install prompt
+window.addEventListener('beforeinstallprompt', (e) => {
+    // Prevent the mini-infobar from appearing on mobile
+    e.preventDefault();
+    // Stash the event so it can be triggered later.
+    deferredPrompt = e;
+    // Update UI to notify the user they can install the PWA
+    if (installButton) {
+        installButton.classList.remove('hidden');
+    }
+});
+
+// 3. Handle the install button click
+if(installButton) {
+    installButton.addEventListener('click', async () => {
+        // Hide the app provided install promotion
+        installButton.classList.add('hidden');
+        // Show the install prompt
+        deferredPrompt.prompt();
+        // Wait for the user to respond to the prompt
+        const { outcome } = await deferredPrompt.userChoice;
+        console.log(`User response to the install prompt: ${outcome}`);
+        // We've used the prompt, and can't use it again, throw it away
+        deferredPrompt = null;
+    });
+}
+
+// 4. Track when the PWA is installed
+window.addEventListener('appinstalled', (evt) => {
+    console.log('Invoice app was installed.', evt);
+    // Clear the deferredPrompt so it can be garbage collected
+    deferredPrompt = null;
+});
+
+// --- Your Existing Logic Starts Here ---
+
 // Initialization
 let oldSar = 0;
 let advanceSar = 0;
@@ -5,7 +54,6 @@ document.addEventListener('DOMContentLoaded', () => {
     loadState();
     loadHistory();
 
-    // Old SAR Modal listeners
     const oldSarModal = document.getElementById('oldSarModal');
     const oldSarCloseBtn = oldSarModal.querySelector('.close-button');
     const saveOldSarBtn = document.getElementById('saveOldSarBtn');
@@ -13,7 +61,6 @@ document.addEventListener('DOMContentLoaded', () => {
     oldSarCloseBtn.onclick = hideOldSarModal;
     saveOldSarBtn.onclick = saveOldSarFromModal;
 
-    // Advance SAR Modal listeners
     const advanceSarModal = document.getElementById('advanceSarModal');
     const advanceSarCloseBtn = advanceSarModal.querySelector('.close-button');
     const saveAdvanceSarBtn = document.getElementById('saveAdvanceSarBtn');
@@ -22,12 +69,8 @@ document.addEventListener('DOMContentLoaded', () => {
     saveAdvanceSarBtn.onclick = saveAdvanceSarFromModal;
 
     window.onclick = function(event) {
-        if (event.target == oldSarModal) {
-            hideOldSarModal();
-        }
-        if (event.target == advanceSarModal) {
-            hideAdvanceSarModal();
-        }
+        if (event.target == oldSarModal) hideOldSarModal();
+        if (event.target == advanceSarModal) hideAdvanceSarModal();
     }
 });
 
@@ -45,15 +88,12 @@ function showOldSarModal() {
 }
 
 function hideOldSarModal() {
-    const modal = document.getElementById('oldSarModal');
-    modal.style.display = 'none';
+    document.getElementById('oldSarModal').style.display = 'none';
 }
 
 function saveOldSarFromModal() {
     const oldSarInput = document.getElementById('oldSarInput');
-    const newOldSar = parseFloat(oldSarInput.value) || 0;
-    
-    oldSar = newOldSar;
+    oldSar = parseFloat(oldSarInput.value) || 0;
     onEntryChange();
     hideOldSarModal();
 }
@@ -67,15 +107,12 @@ function showAdvanceSarModal() {
 }
 
 function hideAdvanceSarModal() {
-    const modal = document.getElementById('advanceSarModal');
-    modal.style.display = 'none';
+    document.getElementById('advanceSarModal').style.display = 'none';
 }
 
 function saveAdvanceSarFromModal() {
     const advanceSarInput = document.getElementById('advanceSarInput');
-    const newAdvanceSar = parseFloat(advanceSarInput.value) || 0;
-    
-    advanceSar = newAdvanceSar;
+    advanceSar = parseFloat(advanceSarInput.value) || 0;
     onEntryChange();
     hideAdvanceSarModal();
 }
@@ -120,8 +157,7 @@ function getEntriesData() {
 
 function calculateTotal() {
     let total = 0;
-    const entriesData = getEntriesData();
-    entriesData.forEach(entry => {
+    getEntriesData().forEach(entry => {
         total += parseFloat(entry.amount) || 0;
     });
 
@@ -188,15 +224,16 @@ function loadState() {
     if (state) {
         oldSar = state.oldSar || 0;
         advanceSar = state.advanceSar || 0;
-    }
-
-    if (state && state.entries && state.entries.length > 0) {
         document.getElementById('sarRate').value = state.sarRate || 32.5;
-        state.entries.forEach(entry => {
-            addEntry(entry.phone, entry.amount, entry.bkash, entry.nagad);
-        });
+        if (state.entries && state.entries.length > 0) {
+            state.entries.forEach(entry => {
+                addEntry(entry.phone, entry.amount, entry.bkash, entry.nagad);
+            });
+        } else {
+           addEntry(); 
+        }
     } else {
-        addEntry(); // Start with one empty entry
+        addEntry(); // Start with one empty entry if no state
     }
     calculateTotal();
 }
@@ -293,10 +330,8 @@ function generateInvoice() {
 
 function saveInvoiceToHistory(invoiceData) {
     const history = JSON.parse(localStorage.getItem('zunaidInvoiceHistory')) || [];
-    history.unshift(invoiceData); // Add to the beginning
-    if (history.length > 50) { // Keep history manageable
-        history.pop();
-    }
+    history.unshift(invoiceData);
+    if (history.length > 50) history.pop();
     localStorage.setItem('zunaidInvoiceHistory', JSON.stringify(history));
     renderHistory();
 }
@@ -329,9 +364,7 @@ function renderHistory() {
         
         container.innerHTML = `
             <div class="history-item-header">Invoice - ${invoiceData.date} ${invoiceData.time}</div>
-            <div class="history-item-details">
-                ${detailsHTML}
-            </div>
+            <div class="history-item-details">${detailsHTML}</div>
             <div class="history-item-actions">
                 <button class="history-btn download-btn" onclick="downloadHistoryItem('${invoiceData.id}')">Download</button>
                 <button class="history-btn edit-btn" onclick="editHistoryItem('${invoiceData.id}')">Edit</button>
@@ -350,10 +383,8 @@ function findHistoryItem(id) {
 function downloadHistoryItem(id) {
     const invoiceData = findHistoryItem(id);
     if (!invoiceData) return;
-
     const receipt = document.getElementById('receipt');
     receipt.innerHTML = generateInvoiceHTML(invoiceData);
-    
     html2canvas(receipt).then(canvas => {
       const link = document.createElement('a');
       link.download = `invoice-${invoiceData.id}.png`;
@@ -366,7 +397,6 @@ function editHistoryItem(id) {
     const invoiceData = findHistoryItem(id);
     if (!invoiceData) return;
     
-    // Restore oldSar and advanceSar from the history item
     oldSar = invoiceData.oldSarValue || 0;
     advanceSar = invoiceData.advanceSarValue || 0;
     
@@ -375,15 +405,13 @@ function editHistoryItem(id) {
     document.getElementById('sarRate').value = invoiceData.sarRate;
 
     if (invoiceData.entries && invoiceData.entries.length > 0) {
-        invoiceData.entries.forEach(entry => {
-            addEntry(entry.phone, entry.amount, entry.bkash, entry.nagad);
-        });
+        invoiceData.entries.forEach(entry => addEntry(entry.phone, entry.amount, entry.bkash, entry.nagad));
     } else {
-        addEntry(); // Add a blank entry to reset the view and trigger calculations
+        addEntry();
     }
 
-    toggleHistory(false); // Close history panel
-    window.scrollTo(0,0); // Scroll to top
+    toggleHistory(false);
+    window.scrollTo(0,0);
 }
 
 function deleteHistoryItem(id) {
@@ -403,7 +431,5 @@ function toggleHistory(forceState) {
         history.style.display = isVisible ? 'none' : 'block';
     }
 
-    if(history.style.display === 'block') {
-        renderHistory();
-    }
-}
+    if(history.style.display === 'block') renderHistory();
+        }
