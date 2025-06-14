@@ -35,6 +35,14 @@ h1 {
   font-size: 28px;
   margin-bottom: 20px;
 }
+/* নতুন ইনস্টল বাটনের জন্য স্টাইল */
+.install-button {
+    background-color: #27ae60;
+    color: white;
+}
+.hidden {
+    display: none;
+}
 .entry {
   display: flex;
   justify-content: space-between;
@@ -46,7 +54,7 @@ h1 {
   padding: 10px;
   border-radius: 12px;
   margin: 10px auto;
-  gap: 5px; /* Added gap for better spacing */
+  gap: 5px;
 }
 .entry input[type="text"], .entry input[type="number"] {
   padding: 6px;
@@ -54,9 +62,9 @@ h1 {
   border-radius: 6px;
   box-shadow: inset 2px 2px 5px #bebebe,
               inset -2px -2px 5px #ffffff;
-  background: #e0e0e0; /* Match background */
+  background: #e0e0e0;
   color: #333;
-  width: 30%; /* Set width for better alignment */
+  width: 30%;
   font-family: 'Roboto Mono', monospace;
 }
 .entry input[type="text"] {
@@ -65,7 +73,7 @@ h1 {
 .checkboxes {
   display: flex;
   gap: 5px;
-  font-size: 12px; /* Smaller font for checkboxes */
+  font-size: 12px;
   align-items: center;
 }
 .delete-entry-btn {
@@ -99,20 +107,6 @@ h1 {
 }
 .grand-total strong {
     color: #c0392b;
-}
-
-.old-new-sar-section {
-  text-align: center;
-  font-weight: bold;
-  margin-top: 10px;
-  display: none;
-  justify-content: center;
-  align-items: center;
-  gap: 20px;
-  font-size: 14px;
-  max-width: 360px;
-  margin-left: auto;
-  margin-right: auto;
 }
 
 .total-section, .sar-section {
@@ -235,7 +229,6 @@ h1 {
     background: #e74c3c;
 }
 
-/* Modal Styles */
 .modal {
   display: none;
   position: fixed;
