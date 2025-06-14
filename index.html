@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -6,6 +7,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="style.css" />
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    
+    <!-- PWA সম্পর্কিত নতুন ট্যাগ -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#e0e0e0">
+    <link rel="apple-touch-icon" href="icon-192.png">
   </head>
   <body>
     <div class="pin-sar-icon" onclick="showOldSarModal()">
@@ -18,6 +24,12 @@
     <div class="history-icon" onclick="toggleHistory()">
       <img src="https://cdn-icons-png.flaticon.com/512/1828/1828911.png" alt="History" />
     </div>
+
+    <!-- নতুন ইনস্টল বাটন যোগ করা হয়েছে -->
+    <div style="text-align: center; margin-bottom: 20px;">
+        <button id="installAppBtn" class="btn install-button hidden">Install App</button>
+    </div>
+
     <div id="entries"></div>
     <div style="text-align: center; margin-top: 10px;">
       <button onclick="addEntry()" class="btn">Add Entry</button>
